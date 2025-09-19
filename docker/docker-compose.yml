@@ -1,0 +1,153 @@
+---
+# "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
+# Test Commands for the topicname 'nids':
+# ---------------------------------------
+# docker exec -it kafka-cntr bash /bin/kafka-topics --list --bootstrap-server localhost:9092
+# docker exec -it kafka-cntr bash /bin/kafka-console-consumer --topic codespotify-topic --from-beginning --bootstrap-server localhost:9092
+# docker exec -it kafka-cntr bash /bin/kafka-console-producer --topic codespotify-topic --bootstrap-server localhost:9092
+# Notes
+# -----
+# Data will communicate in the direction of kafka-->logstash-->Elasticsearch-->kibana
+# "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-._,-'"`-._,-
+
+version: '3.3'
+services:
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-cntr
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      CLUSTER_ID: a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 2
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+
+      # Dinleyiciler
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-cntr:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 2@kafka-cntr:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - kafka_elk_nw
+  
+  elasticsearch:
+    container_name: elasticsearch-cntr
+    image: elasticsearch:9.1.3
+    environment:
+      - cluster.name=kafka-cluster
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data:rw
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+      - 9300:9300
+    depends_on:
+      - kafka
+    stdin_open: true
+    tty: true
+    restart: always
+    networks:
+      - kafka_elk_nw
+    logging:
+      driver: "json-file"
+    healthcheck:
+      test: curl -u elastic:elastic -s -f elasticsearch-cntr:9200/_cat/health >/dev/null || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 5
+  logstash:
+    container_name: logstash-cntr
+    image: logstash:9.1.3
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka-cntr:9092
+      - ELASTICSEARCH_HOSTS=elasticsearch-cntr:9200
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./logstash-kafka.conf:/usr/share/logstash/pipeline/logstash-kafka.conf
+    ports:
+      - 5044:5044
+    depends_on:
+      - kafka
+      - elasticsearch
+    stdin_open: true
+    tty: true
+    restart: always
+    networks:
+      - kafka_elk_nw
+    logging:
+      driver: "json-file"
+    healthcheck:
+      test: ["CMD", "curl", "--silent", "--fail", "http://logstash-cntr:9600"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+  kibana:
+    container_name: kibana-cntr
+    image: kibana:9.1.3
+    environment:
+      - xpack.encryptedSavedObjects.encryptionKey=123
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
+    stdin_open: true
+    tty: true
+    restart: always
+    networks:
+      - kafka_elk_nw
+    links: ['elasticsearch']
+    logging:
+      driver: "json-file"
+    healthcheck:
+      test: curl --fail http://kibana-cntr:5601 || exit 1
+      interval: 30s
+      retries: 3
+      timeout: 10s
+
+  keycloak:
+    container_name: keycloak-cntr
+    image: quay.io/keycloak/keycloak:latest
+    command: start-dev
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+      - elasticsearch
+    networks:
+      - kafka_elk_nw
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://keycloak-cntr:8080/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  
+
+networks:
+  kafka_elk_nw:
+    driver: bridge
+
+volumes:
+  elasticsearch_data:
+    driver: local
