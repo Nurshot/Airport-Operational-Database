@@ -3,7 +3,7 @@ using AODB.Domain.Entities;
 
 namespace AODB.Application.Airlines.Queries.GetAirlines;
 
-public class AircraftDto
+public class AirlineDto
 {
 
     public int Id { get; init; }
@@ -22,7 +22,7 @@ public class AircraftDto
     {
         public Mapping()
         {
-            CreateMap<Airline, AircraftDto>();
+            CreateMap<Airline, AirlineDto>();
         }
     }
 }

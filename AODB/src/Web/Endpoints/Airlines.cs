@@ -2,10 +2,8 @@
 using AODB.Application.Airlines.Commands.UpdateAirline;
 using AODB.Application.Airlines.Commands.DeleteAirline;
 using AODB.Application.Airlines.Queries.GetAirlines;
+using AODB.Application.Airlines.Queries.GetAirlineById;
 using AODB.Application.Common.Interfaces;
-using AODB.Application.Common.Models;
-using AODB.Domain.Constants;  // Roles sabitleri için
-using Microsoft.AspNetCore.Authorization;  // Authorize attribute için
 
 
 namespace AODB.Web.Endpoints;
@@ -15,11 +13,13 @@ public class Airlines : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         var group = app.MapGroup(this)
-        .RequireAuthorization(); // Sadece admin rolü olan kullanıcılar erişebilir
+        .RequireAuthorization(); 
         group.MapGet("/", GetAirlines);
 
+        group.MapGet("/{id}", GetAirlineById);
 
-        group.MapPost("/airlines", CreateAirline)
+
+        group.MapPost("/", CreateAirline)
             .RequireAuthorization("admin");
         group.MapPut("/{id}", UpdateAirline)
            .RequireAuthorization("admin");
@@ -43,9 +43,15 @@ public class Airlines : EndpointGroupBase
         await sender.Send(command);
         return Results.NoContent();  //HTTP KODU 204 Güncellendi.
     }
-    public async Task<List<AircraftDto>> GetAirlines(ISender sender)
+    public async Task<List<AirlineDto>> GetAirlines(ISender sender)
     {
         return await sender.Send(new GetAirlinesQuery());
+    }
+
+    public async Task<AirlineDto> GetAirlineById(ISender sender, int id)
+    {
+         return await sender.Send(new GetAirlineByIdQuery(id));
+        
     }
 
     public async Task<IResult> DeleteAirline(ISender sender, int id)

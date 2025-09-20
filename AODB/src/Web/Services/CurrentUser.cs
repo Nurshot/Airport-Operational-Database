@@ -16,10 +16,8 @@ public class CurrentUser : IUser
     {
         get
         {
-            // .NET'in standart NameIdentifier claim'ini kullan (JWT'de sub'a karşılık gelir)
-
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-            //Console.WriteLine($"🔍 CurrentUser.Id: {userId ?? "NULL"}");
+           
             return userId;
         }
     }
@@ -47,7 +45,7 @@ public class CurrentUser : IUser
                 }
                 catch (System.Text.Json.JsonException)
                 {
-                    Console.WriteLine("🔍 realm_access parse error");
+                    Console.WriteLine("realm_access parse error");
                 }
             }
             

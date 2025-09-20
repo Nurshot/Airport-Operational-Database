@@ -1,6 +1,7 @@
 ﻿using AODB.Application.Aircrafts.Commands.CreateAircraft;
-using AODB.Application.Aircrafts.Commands.UpdateAircraft;
 using AODB.Application.Aircrafts.Commands.DeleteAircraft;
+using AODB.Application.Aircrafts.Commands.UpdateAircraft;
+using AODB.Application.Aircrafts.Queries.GetAircraftById;
 using AODB.Application.Aircrafts.Queries.GetAircrafts;
 using AODB.Application.Common.Interfaces;
 
@@ -15,7 +16,10 @@ public class Aircrafts : EndpointGroupBase
         .RequireAuthorization(); 
         group.MapGet("/", GetAircrafts);
 
-        group.MapPost("/Aircrafts", CreateAircraft)
+        group.MapGet("/{id}", GetAircraftById);
+
+
+        group.MapPost("/", CreateAircraft)
             .RequireAuthorization("admin");
         group.MapPut("/{id}", UpdateAircraft)
            .RequireAuthorization("admin");
@@ -39,6 +43,12 @@ public class Aircrafts : EndpointGroupBase
     {
         return await sender.Send(new GetAircraftsQuery());
     }
+
+    public async Task<AircraftDto> GetAircraftById(ISender sender, int id)
+    {
+        return await sender.Send(new GetAircraftByIdQuery(id));
+    }
+
 
     public async Task<IResult> DeleteAircraft(ISender sender, int id)
     {

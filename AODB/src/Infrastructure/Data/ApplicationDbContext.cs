@@ -14,6 +14,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Airport> Airports => Set<Airport>();
     public DbSet<Aircraft> Aircrafts => Set<Aircraft>();
 
+    public DbSet<Flight> Flights => Set<Flight>();
+    public DbSet<FlightTimesCurrent> FlightTimesCurrent => Set<FlightTimesCurrent>();
+    public DbSet<FlightTimesHistory> FlightTimesHistory => Set<FlightTimesHistory>();
+
+    public DbSet<Resource> Resources => Set<Resource>();
+
+
+
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

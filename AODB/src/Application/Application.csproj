@@ -22,4 +22,10 @@
     <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Flights\Commands\CreateFlight\" />
+    <Folder Include="Flights\Commands\DeleteFlight\" />
+    <Folder Include="Flights\Commands\UpdateFlight\" />
+  </ItemGroup>
+
 </Project>

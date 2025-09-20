@@ -3,6 +3,7 @@ using AODB.Application.Airports.Commands.CreateAirport;
 using AODB.Application.Airports.Commands.UpdateAirport;
 using AODB.Application.Airports.Commands.DeleteAirport;
 using AODB.Application.Airports.Queries.GetAirports;
+using AODB.Application.Airports.Queries.GetAirportById;
 using AODB.Application.Common.Interfaces;
 using AODB.Application.Common.Models;
 using AODB.Domain.Constants;  // Roles sabitleri için
@@ -16,8 +17,11 @@ public class Airports : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         var group = app.MapGroup(this)
-        .RequireAuthorization(); // Sadece admin rolü olan kullanıcılar erişebilir
+        .RequireAuthorization(); 
         group.MapGet("/", GetAirports);
+
+        group.MapGet("/{id}", GetAirportById);
+            
 
         group.MapPost("/", CreateAirport)
             .RequireAuthorization("admin");
@@ -46,6 +50,11 @@ public class Airports : EndpointGroupBase
     public async Task<List<AirportDto>> GetAirports(ISender sender)
     {
         return await sender.Send(new GetAirportsQuery());
+    }
+
+    public async Task<AirportDto> GetAirportById(ISender sender, int id)
+    {
+        return await sender.Send(new GetAirportByIdQuery(id));
     }
 
     public async Task<IResult> DeleteAirport(ISender sender, int id)

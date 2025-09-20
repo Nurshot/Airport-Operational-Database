@@ -4,9 +4,9 @@ using AODB.Application.Common.Security;
 namespace AODB.Application.Airlines.Queries.GetAirlines;
 
 [Authorize]
-public record GetAirlinesQuery : IRequest<List<AircraftDto>>;
+public record GetAirlinesQuery : IRequest<List<AirlineDto>>;
 
-public class GetAirlinesQueryHandler : IRequestHandler<GetAirlinesQuery, List<AircraftDto>>
+public class GetAirlinesQueryHandler : IRequestHandler<GetAirlinesQuery, List<AirlineDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;
@@ -28,12 +28,12 @@ public class GetAirlinesQueryHandler : IRequestHandler<GetAirlinesQuery, List<Ai
     //            .ToListAsync(cancellationToken)
     //    };
     //}
-    public async Task<List<AircraftDto>> Handle(GetAirlinesQuery request, CancellationToken cancellationToken)
+    public async Task<List<AirlineDto>> Handle(GetAirlinesQuery request, CancellationToken cancellationToken)
     {
         // Direkt liste
         return await _context.Airlines
             .AsNoTracking()
-            .ProjectTo<AircraftDto>(_mapper.ConfigurationProvider)
+            .ProjectTo<AirlineDto>(_mapper.ConfigurationProvider)
             .OrderBy(p => p.Id)   
             .ToListAsync(cancellationToken);
     }
