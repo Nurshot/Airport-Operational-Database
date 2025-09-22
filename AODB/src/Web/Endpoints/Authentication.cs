@@ -26,7 +26,8 @@ public class Authentication : EndpointGroupBase
         try
         {
             var result = await sender.Send(command);
-            
+
+           
             if (!result.IsSuccess)
             {
                 loggingService.LogAuthenticationFailure(command.Username, requestId, result.ErrorMessage ?? "authfail");
@@ -34,7 +35,7 @@ public class Authentication : EndpointGroupBase
             }
 
             loggingService.LogAuthenticationSuccess(command.Username, result.UserId??"null", requestId, result.Roles);
-
+            Console.Write(result);
             return Results.Ok(new
             {
                 accessToken = result.AccessToken,
